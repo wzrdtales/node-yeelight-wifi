@@ -58,6 +58,17 @@ class Lookup extends EventEmitter {
       } else light.updateBySSDPMessage(data);
     });
 
+    this.lights
+      .filter(
+        light =>
+          new Date().setTime(light.lastSeen.getTime() + 60 * 1000 * 2) <=
+            new Date() && !light.dcEmitted
+      )
+      .forEach(light => {
+        light.dcEmitted = true;
+        light.emit('disappeared', light);
+      });
+
     this.ssdp.search('wifi_bulb');
   }
 
@@ -98,7 +109,9 @@ class Lookup extends EventEmitter {
           alias.family === 'IPv4' &&
           alias.address !== '127.0.0.1' &&
           !alias.internal
-        ) { ipAddresses.push(alias.address); }
+        ) {
+          ipAddresses.push(alias.address);
+        }
       });
     }
 
@@ -134,7 +147,9 @@ class Lookup extends EventEmitter {
                 arp.getMAC(ip, (err, mac) => {
                   // check if already added
                   let light = null;
-                  if (!err) { light = this.lights.find(light => light.mac === mac); } else light = this.lights.find(light => light.host === ip);
+                  if (!err) {
+                    light = this.lights.find(light => light.mac === mac);
+                  } else light = this.lights.find(light => light.host === ip);
 
                   if (!light) {
                     light = new Yeelight();
